@@ -1,0 +1,44 @@
+name: Deploy JembatanNurani
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file from secrets
+        run: |
+          cat <<EOF > .env
+          RABBITMQ_USER=${{ secrets.RABBITMQ_USER }}
+          RABBITMQ_PASS=${{ secrets.RABBITMQ_PASS }}
+          EOF
+
+      - name: Prepare deploy files
+        run: |
+          mkdir jembatannurani
+          mv docker-compose.yml .env jembatannurani/
+
+      - name: Copy files to Wiwokdetok Server
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "jembatannurani/*"
+          target: "~/"
+
+      - name: Run on Wiwokdetok Server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/jembatannurani || exit 1
+            docker-compose down || true
+            docker-compose up -d
