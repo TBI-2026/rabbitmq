@@ -1,4 +1,4 @@
-name: Deploy JembatanNurani
+name: Deploy RabbitMQ
 
 on:
   workflow_dispatch:
@@ -20,25 +20,25 @@ jobs:
 
       - name: Prepare deploy files
         run: |
-          mkdir jembatannurani
-          mv docker-compose.yml .env jembatannurani/
+          mkdir rabbitmq
+          mv docker-compose.yml .env rabbitmq/
 
-      - name: Copy files to Wiwokdetok Server
+      - name: Copy files to Server
         uses: appleboy/scp-action@v0.1.4
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          source: "jembatannurani/*"
+          source: "rabbitmq/*"
           target: "~/"
 
-      - name: Run on Wiwokdetok Server
+      - name: Run on Server
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd ~/jembatannurani || exit 1
-            docker-compose down || true
-            docker-compose up -d
+            cd ~/rabbitmq || exit 1
+            docker compose down || true
+            docker compose up -d
